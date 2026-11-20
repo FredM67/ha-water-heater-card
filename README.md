@@ -145,8 +145,10 @@ entities:
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `entity` | string | the first water heater found | A `water_heater` entity, the switch of a cumulus on a relay, or the power sensor of a PV-routed cumulus (read-only, heating above 50 W) |
+| `device` | string | | Advanced (YAML only): a device id — its `water_heater` entity (else its switch) is the water heater, when `entity` is not set |
 | `title` | string | the water heater's name | Card title |
 | `show_title` | boolean | `true` | Show the title |
+| `show_subtitle` | boolean | `true` | Show the room and model under the title |
 | `navigation_path` | string | | A tap on the header opens this dashboard path |
 | `temperature` | string | the water heater's | The water's temperature sensor (a cumulus on a relay, or another probe) |
 | `capacity` | number | `200` | The tank's volume (L), to estimate the hot water when the integration does not report it |
@@ -158,7 +160,7 @@ entities:
 | `animations` | boolean | `true` | Bubbles, glowing element, turning fan |
 | `show_controls` | boolean | `true` | Modes, boost, away, target, heat now / stop |
 | `zoom` | boolean | `true` | Mini card: the zoom button |
-| `entities` | map | | Advanced (YAML): the entity of a role, over the discovery — `temperature`, `inlet`, `level`, `litres`, `showers`, `power`, `energy`, `energy_grid`, `energy_solar`, `heating`, `boost`, `away`, `away_end`, `error` |
+| `entities` | map | | Advanced (YAML): the entity of a role, over the discovery — `temperature`, `inlet`, `level`, `litres`, `showers`, `power`, `energy`, `energy_grid`, `energy_solar`, `heating`, `boost`, `away`, `away_end`, `error` (`boost` and `away` can be a `switch` or an `input_boolean`) |
 | `language` | string | Home Assistant's | Advanced: one of the [languages](#translations) |
 
 ## Screenshots
