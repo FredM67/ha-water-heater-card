@@ -1127,13 +1127,14 @@ class WaterHeaterCard extends RcCard {
     .cgrid .cw .xh { color: var(--wh-water); }
     .cgrid .cs .xh { color: var(--rc-idle); }
     .cx { font-size: 12px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    :host { --wh-water: #3b7fd4; --wh-off-peak: #4c6ef5; }
+    /* Solar heating is free: drawn in the theme's success green, apart from the amber of the sun. */
+    :host { --wh-water: #3b7fd4; --wh-off-peak: #4c6ef5; --wh-solar-heat: var(--rc-ok); }
     .tl { position: relative; height: 30px; margin-top: 8px; border-radius: 8px; overflow: hidden; background: var(--secondary-background-color, rgba(127,127,127,.08)); }
     .tl i { position: absolute; top: 0; bottom: 0; }
     .tl .hc { background: color-mix(in srgb, var(--wh-off-peak) 18%, transparent); }
     .tl .run, .tl .pk, .tl .so { top: 7px; bottom: 7px; min-width: 3px; border-radius: 4px; background: var(--wh-heating); }
     .tl .pk { background: var(--rc-alert); }
-    .tl .so { background: var(--wh-solar); }
+    .tl .so { background: var(--wh-solar-heat); }
     .tk { position: relative; height: 15px; margin-top: 3px; font-size: 11px; color: var(--secondary-text-color); }
     .tk span { position: absolute; top: 0; white-space: nowrap; }
     .tk span + span { transform: translateX(-50%); }
@@ -1142,7 +1143,7 @@ class WaterHeaterCard extends RcCard {
     .lg .off::before { background: color-mix(in srgb, var(--wh-off-peak) 40%, transparent); }
     .lg .run::before { background: var(--wh-heating); }
     .lg .pk::before { background: var(--rc-alert); }
-    .lg .so::before { background: var(--wh-solar); }
+    .lg .so::before { background: var(--wh-solar-heat); }
     @container (max-width: 300px) {
       .cgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .cgrid > :nth-child(3):last-child { grid-column: 1 / -1; }
