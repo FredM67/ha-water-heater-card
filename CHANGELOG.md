@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.3 - 2026-11-23
+
+### Fixes
+- **Heating strip**: on a PV-routed tank (grid and solar energy meters), the heating outside the off-peak hours that only the solar meter counted is drawn in the solar colour and labelled *Solar* (*1 h 15 · 15 min on solar*), instead of *Peak rate*. Heating the grid meter counted too, or that no meter counted, stays at the peak rate.
+
 ## 1.4.2 - 2026-11-22
 
 ### Performance

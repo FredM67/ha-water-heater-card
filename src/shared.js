@@ -695,6 +695,8 @@ const whHotWater = ({ level, litres, showers, temp, target, cold = 15, capacity 
 const WH_PERIODS = ["day", "week", "month", "year"];
 // How often the statistics and the history are read again (ms).
 const WH_REFRESH = 5 * 60 * 1000;
+// How long after a heating span a meter can still count its energy: it is read a little after the power.
+const WH_METER_LAG = 2 * 60 * 1000;
 // A day with less hot water than this (m³, 1 L) is a standby day: its energy only kept the water hot.
 const WH_STANDBY_M3 = 0.001;
 
@@ -733,6 +735,17 @@ const whSpans = (rows, test, end) => {
 };
 
 // The parts of span `[a, b]` outside every span of `cover`.
+// A meter's value at time t (ms), from its history rows: the last numeric state at or before t, else null.
+const whValueAt = (rows, t) => {
+  let v = null;
+  for (const r of rows || []) {
+    if ((r.lu ?? r.lc) * 1000 > t) break;
+    const x = Number.parseFloat(r.s);
+    if (Number.isFinite(x)) v = x;
+  }
+  return v;
+};
+
 const whOutside = ([a, b], cover) => {
   let parts = [[a, b]];
   for (const [c, d] of cover)
@@ -855,6 +868,8 @@ const WH_I18N = {
     lg_off_peak: "Off-peak",
     lg_heating: "Heating",
     lg_peak: "Peak rate",
+    lg_solar: "Solar",
+    solar_time: "{d} on solar",
     ed_cost: "Cost and heating",
     ed_energy_meter: "Electricity meter",
     ed_energy_meter_helper: "The tank’s own energy meter (kWh, with long-term statistics)",
@@ -952,6 +967,8 @@ const WH_I18N = {
     lg_off_peak: "Heures creuses",
     lg_heating: "Chauffe",
     lg_peak: "Heures pleines",
+    lg_solar: "Solaire",
+    solar_time: "{d} en solaire",
     ed_cost: "Coût et chauffe",
     ed_energy_meter: "Compteur électrique",
     ed_energy_meter_helper: "Le compteur d’énergie du ballon (kWh, avec statistiques long terme)",
@@ -1049,6 +1066,8 @@ const WH_I18N = {
     lg_off_peak: "Niedertarif",
     lg_heating: "Heizen",
     lg_peak: "Hochtarif",
+    lg_solar: "Solar",
+    solar_time: "{d} mit Solarstrom",
     ed_cost: "Kosten und Heizen",
     ed_energy_meter: "Stromzähler",
     ed_energy_meter_helper: "Der eigene Energiezähler des Speichers (kWh, mit Langzeitstatistik)",
@@ -1146,6 +1165,8 @@ const WH_I18N = {
     lg_off_peak: "Hora valle",
     lg_heating: "Calentando",
     lg_peak: "Hora punta",
+    lg_solar: "Solar",
+    solar_time: "{d} con energía solar",
     ed_cost: "Coste y calentamiento",
     ed_energy_meter: "Contador eléctrico",
     ed_energy_meter_helper: "El contador de energía propio del termo (kWh, con estadísticas a largo plazo)",
@@ -1245,6 +1266,8 @@ const WH_I18N = {
     lg_off_peak: "Нижа тарифа",
     lg_heating: "Грејање",
     lg_peak: "Виша тарифа",
+    lg_solar: "Соларно",
+    solar_time: "{d} на соларну енергију",
     ed_cost: "Трошак и грејање",
     ed_energy_meter: "Бројило струје",
     ed_energy_meter_helper: "Сопствено бројило енергије бојлера (kWh, са дугорочном статистиком)",
@@ -1344,6 +1367,8 @@ const WH_I18N = {
     lg_off_peak: "Niža tarifa",
     lg_heating: "Grejanje",
     lg_peak: "Viša tarifa",
+    lg_solar: "Solarno",
+    solar_time: "{d} na solarnu energiju",
     ed_cost: "Trošak i grejanje",
     ed_energy_meter: "Brojilo struje",
     ed_energy_meter_helper: "Sopstveno brojilo energije bojlera (kWh, sa dugoročnom statistikom)",
@@ -1441,6 +1466,8 @@ const WH_I18N = {
     lg_off_peak: "Fascia fuori punta",
     lg_heating: "Riscaldamento",
     lg_peak: "Fascia di punta",
+    lg_solar: "Solare",
+    solar_time: "{d} da fotovoltaico",
     ed_cost: "Costo e riscaldamento",
     ed_energy_meter: "Contatore elettrico",
     ed_energy_meter_helper: "Il contatore di energia dello scaldabagno (kWh, con statistiche a lungo termine)",
@@ -1538,6 +1565,8 @@ const WH_I18N = {
     lg_off_peak: "Daltarief",
     lg_heating: "Verwarmen",
     lg_peak: "Piektarief",
+    lg_solar: "Zonne-energie",
+    solar_time: "{d} op zonne-energie",
     ed_cost: "Kosten en verwarmen",
     ed_energy_meter: "Elektriciteitsmeter",
     ed_energy_meter_helper: "De eigen energiemeter van de boiler (kWh, met langetermijnstatistieken)",
@@ -1635,6 +1664,8 @@ const WH_I18N = {
     lg_off_peak: "Vazio",
     lg_heating: "Aquecimento",
     lg_peak: "Ponta",
+    lg_solar: "Solar",
+    solar_time: "{d} com energia solar",
     ed_cost: "Custo e aquecimento",
     ed_energy_meter: "Contador de eletricidade",
     ed_energy_meter_helper: "O contador de energia próprio do termoacumulador (kWh, com estatísticas de longo prazo)",
@@ -1734,6 +1765,8 @@ const WH_I18N = {
     lg_off_peak: "Taryfa pozaszczytowa",
     lg_heating: "Grzanie",
     lg_peak: "Taryfa szczytowa",
+    lg_solar: "Słońce",
+    solar_time: "{d} z energii słonecznej",
     ed_cost: "Koszt i grzanie",
     ed_energy_meter: "Licznik prądu",
     ed_energy_meter_helper: "Własny licznik energii zasobnika (kWh, ze statystykami długoterminowymi)",
@@ -1833,6 +1866,8 @@ const WH_I18N = {
     lg_off_peak: "Tarif redus",
     lg_heating: "Încălzire",
     lg_peak: "Tarif de vârf",
+    lg_solar: "Solar",
+    solar_time: "{d} din energie solară",
     ed_cost: "Cost și încălzire",
     ed_energy_meter: "Contor electric",
     ed_energy_meter_helper: "Contorul de energie propriu al boilerului (kWh, cu statistici pe termen lung)",
@@ -1930,6 +1965,8 @@ const WH_I18N = {
     lg_off_peak: "Lavlast",
     lg_heating: "Opvarmning",
     lg_peak: "Spidslast",
+    lg_solar: "Sol",
+    solar_time: "{d} på solenergi",
     ed_cost: "Omkostning og opvarmning",
     ed_energy_meter: "Elmåler",
     ed_energy_meter_helper: "Beholderens egen energimåler (kWh, med langtidsstatistik)",
@@ -2027,6 +2064,8 @@ const WH_I18N = {
     lg_off_peak: "Lågtaxa",
     lg_heating: "Uppvärmning",
     lg_peak: "Högtaxa",
+    lg_solar: "Sol",
+    solar_time: "{d} på solenergi",
     ed_cost: "Kostnad och uppvärmning",
     ed_energy_meter: "Elmätare",
     ed_energy_meter_helper: "Tankens egen energimätare (kWh, med långtidsstatistik)",
@@ -2124,6 +2163,8 @@ const WH_I18N = {
     lg_off_peak: "Нощна тарифа",
     lg_heating: "Загряване",
     lg_peak: "Дневна тарифа",
+    lg_solar: "Слънчева",
+    solar_time: "{d} от слънчева енергия",
     ed_cost: "Разход и загряване",
     ed_energy_meter: "Електромер",
     ed_energy_meter_helper: "Собственият енергиен брояч на бойлера (kWh, с дългосрочна статистика)",
@@ -2223,6 +2264,8 @@ const WH_I18N = {
     lg_off_peak: "Льготный тариф",
     lg_heating: "Нагрев",
     lg_peak: "Пиковый тариф",
+    lg_solar: "Солнечная",
+    solar_time: "{d} от солнечной энергии",
     ed_cost: "Стоимость и нагрев",
     ed_energy_meter: "Счётчик электроэнергии",
     ed_energy_meter_helper: "Собственный счётчик энергии бойлера (kWh, с долгосрочной статистикой)",
@@ -2322,6 +2365,8 @@ const WH_I18N = {
     lg_off_peak: "Пільговий тариф",
     lg_heating: "Нагрів",
     lg_peak: "Піковий тариф",
+    lg_solar: "Сонячна",
+    solar_time: "{d} від сонячної енергії",
     ed_cost: "Вартість і нагрів",
     ed_energy_meter: "Лічильник електрики",
     ed_energy_meter_helper: "Власний лічильник енергії бойлера (kWh, з довгостроковою статистикою)",
@@ -2419,6 +2464,8 @@ const WH_I18N = {
     lg_off_peak: "Völgyidő",
     lg_heating: "Fűtés",
     lg_peak: "Csúcsidő",
+    lg_solar: "Napenergia",
+    solar_time: "{d} napenergiával",
     ed_cost: "Költség és fűtés",
     ed_energy_meter: "Villanyóra",
     ed_energy_meter_helper: "A tároló saját energiamérője (kWh, hosszú távú statisztikával)",
@@ -2518,6 +2565,8 @@ const WH_I18N = {
     lg_off_peak: "Nízka tarifa",
     lg_heating: "Ohrev",
     lg_peak: "Vysoká tarifa",
+    lg_solar: "Solárne",
+    solar_time: "{d} zo solárnej energie",
     ed_cost: "Náklady a ohrev",
     ed_energy_meter: "Elektromer",
     ed_energy_meter_helper: "Vlastný merač energie zásobníka (kWh, s dlhodobými štatistikami)",
@@ -2617,6 +2666,8 @@ const WH_I18N = {
     lg_off_peak: "Nízký tarif",
     lg_heating: "Ohřev",
     lg_peak: "Vysoký tarif",
+    lg_solar: "Solární",
+    solar_time: "{d} ze solární energie",
     ed_cost: "Náklady a ohřev",
     ed_energy_meter: "Elektroměr",
     ed_energy_meter_helper: "Vlastní měřič energie zásobníku (kWh, s dlouhodobými statistikami)",
@@ -2716,6 +2767,8 @@ const WH_I18N = {
     lg_off_peak: "Nižja tarifa",
     lg_heating: "Gretje",
     lg_peak: "Višja tarifa",
+    lg_solar: "Sončna",
+    solar_time: "{d} s sončno energijo",
     ed_cost: "Strošek in gretje",
     ed_energy_meter: "Števec elektrike",
     ed_energy_meter_helper: "Lastni števec energije bojlerja (kWh, z dolgoročno statistiko)",
@@ -2813,6 +2866,8 @@ const WH_I18N = {
     lg_off_peak: "Zemais tarifs",
     lg_heating: "Uzsildīšana",
     lg_peak: "Maksimuma tarifs",
+    lg_solar: "Saules",
+    solar_time: "{d} no saules enerģijas",
     ed_cost: "Izmaksas un uzsildīšana",
     ed_energy_meter: "Elektrības skaitītājs",
     ed_energy_meter_helper: "Boilera paša enerģijas skaitītājs (kWh, ar ilgtermiņa statistiku)",
@@ -2910,6 +2965,8 @@ const WH_I18N = {
     lg_off_peak: "Μειωμένο τιμολόγιο",
     lg_heating: "Θέρμανση",
     lg_peak: "Ώρες αιχμής",
+    lg_solar: "Ηλιακή",
+    solar_time: "{d} από ηλιακή ενέργεια",
     ed_cost: "Κόστος και θέρμανση",
     ed_energy_meter: "Μετρητής ρεύματος",
     ed_energy_meter_helper: "Ο δικός μετρητής ενέργειας του θερμοσίφωνα (kWh, με μακροπρόθεσμα στατιστικά)",
